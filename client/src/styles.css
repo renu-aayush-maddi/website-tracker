@@ -1,0 +1,21 @@
+/* Chart series colours: validated categorical slots 1–2, stepped separately for each scheme. */
+:root {
+  --wt-series-1: #2a78d6;
+  --wt-series-2: #eb6834;
+}
+[data-mantine-color-scheme='dark'] {
+  --wt-series-1: #3987e5;
+  --wt-series-2: #d95926;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+.clickable-row {
+  cursor: pointer;
+}
+.clickable-row:focus-visible {
+  outline: 2px solid var(--mantine-primary-color-filled);
+  outline-offset: -2px;
+}

@@ -1,0 +1,137 @@
+# Render Blueprint — https://render.com/docs/blueprint-spec
+#
+# Free architecture:
+#   website-tracker      Static Site  (React SPA, CDN)      — /api/* is rewritten to the API
+#   website-tracker-api  Web Service  (Express API, free)   — scheduled checks are triggered by an
+#                                                             external cron calling /api/internal/scheduler/tick
+#   MongoDB Atlas M0     (outside Render)
+#
+# After the first deploy, CHECK the API's public URL. If Render had to change the
+# service name (e.g. website-tracker-api-x1y2.onrender.com), update the rewrite
+# destination below and FRONTEND_URL to match, then redeploy.
+
+services:
+  - name: website-tracker-api
+    type: web
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --include=dev && npm run build:server
+    startCommand: npm run start -w server
+    healthCheckPath: /api/health
+    buildFilter:
+      paths:
+        - server/**
+        - shared/**
+        - package.json
+        - package-lock.json
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      # Skips mongodb-memory-server's MongoDB download (only tests need it).
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+      - key: MONGODB_URI
+        sync: false
+      # Public URL of the static site, e.g. https://website-tracker.onrender.com (comma-separate several).
+      - key: FRONTEND_URL
+        sync: false
+      # Copy this value into cron-job.org / GitHub Actions as the Bearer token.
+      - key: SCHEDULER_SECRET
+        generateValue: true
+      # Needed once to create the admin account at /setup. Delete it afterwards.
+      - key: SETUP_TOKEN
+        generateValue: true
+      - key: TRUST_PROXY
+        value: "1"
+      - key: EMAIL_PROVIDER
+        value: none # resend | smtp | none
+      - key: EMAIL_FROM
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+
+  - name: website-tracker
+    type: web
+    runtime: static
+    buildCommand: npm ci --include=dev && npm run build:client
+    staticPublishPath: client/dist
+    buildFilter:
+      paths:
+        - client/**
+        - shared/**
+        - package.json
+        - package-lock.json
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
+      - key: MONGOMS_DISABLE_POSTINSTALL
+        value: "1"
+    routes:
+      # Proxy the API through the static site so the browser sees one origin:
+      # session cookies stay first-party (SameSite=Strict) and no CORS is needed.
+      - type: rewrite
+        source: /api/*
+        destination: https://website-tracker-api.onrender.com/api/*
+      # Single-page app fallback.
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    headers:
+      - path: /*
+        name: Content-Security-Policy
+        value: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
+      - path: /*
+        name: X-Frame-Options
+        value: DENY
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff
+      - path: /*
+        name: Referrer-Policy
+        value: strict-origin-when-cross-origin
+      - path: /*
+        name: Permissions-Policy
+        value: camera=(), microphone=(), geolocation=(), payment=()
+      - path: /*
+        name: Strict-Transport-Security
+        value: max-age=31536000; includeSubDomains
+      - path: /assets/*
+        name: Cache-Control
+        value: public, max-age=31536000, immutable
+
+  # ---------------------------------------------------------------------------
+  # Paid alternatives to the external cron (uncomment ONE if you prefer them).
+  # Both call the same lease-based runTick(), so they can also run alongside the
+  # external cron safely.
+  # ---------------------------------------------------------------------------
+  #
+  # - name: website-tracker-scheduler          # Render Cron Job — billed per run (minimum ~$1/month)
+  #   type: cron
+  #   runtime: node
+  #   region: singapore
+  #   schedule: "* * * * *"
+  #   buildCommand: npm ci --include=dev && npm run build:server
+  #   startCommand: npm run tick -w server
+  #   envVars:
+  #     - key: NODE_ENV
+  #       value: production
+  #     - key: MONGOMS_DISABLE_POSTINSTALL
+  #       value: "1"
+  #     - key: MONGODB_URI
+  #       sync: false
+  #     - key: SCHEDULER_SECRET
+  #       sync: false
+  #     - key: EMAIL_PROVIDER
+  #       value: none
+  #
+  # - name: website-tracker-worker             # Background Worker — Starter plan, always on
+  #   type: worker
+  #   runtime: node
+  #   plan: starter
+  #   region: singapore
+  #   buildCommand: npm ci --include=dev && npm run build:server
+  #   startCommand: npm run worker:prod -w server
+  #   envVars: (same as the cron job above)
