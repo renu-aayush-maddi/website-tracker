@@ -103,6 +103,14 @@ export const LIMITS = {
   statsRangeMaxDays: 400,
 } as const;
 
+/** Card background images: the browser re-encodes to JPEG before upload; the server enforces these limits. */
+export const COVER_IMAGE = {
+  maxBytes: 600 * 1024,
+  /** Longest side after the browser resizes the picture. */
+  maxDimension: 1280,
+  contentTypes: ['image/jpeg', 'image/png', 'image/webp'],
+} as const;
+
 export const INTERVAL_PRESETS = [
   { seconds: 60, label: 'Every minute' },
   { seconds: 300, label: 'Every 5 minutes' },

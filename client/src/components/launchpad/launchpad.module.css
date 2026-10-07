@@ -1,0 +1,317 @@
+/* ---------- Grid: mobile-first, 1 → 2 → auto-fill columns ---------- */
+.grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr; /* 320px phones: full-width cards */
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+@media (min-width: 360px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 48em) {
+  .grid {
+    gap: 16px;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  }
+}
+
+@media (min-width: 75em) {
+  .grid {
+    gap: 20px;
+  }
+}
+
+.cell {
+  min-width: 0;
+}
+
+/* ---------- Card ---------- */
+.card {
+  --card-radius: 18px;
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--card-radius);
+  overflow: hidden;
+  isolation: isolate;
+  container-type: inline-size;
+  background: #1f2937;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.12),
+    0 6px 16px -6px rgba(15, 23, 42, 0.25);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 48em) {
+  .card {
+    aspect-ratio: 3 / 2;
+  }
+}
+
+/* Hover lift only where hover exists; touch screens get a press effect instead. */
+@media (hover: hover) {
+  .card:hover {
+    transform: translateY(-3px);
+    box-shadow:
+      0 2px 4px rgba(15, 23, 42, 0.14),
+      0 14px 28px -8px rgba(15, 23, 42, 0.38);
+  }
+  .card:hover .image {
+    transform: scale(1.05);
+  }
+}
+
+.card:active {
+  transform: scale(0.98);
+}
+
+.card:has(.link:focus-visible) {
+  outline: 3px solid var(--mantine-primary-color-filled);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .image {
+    transition: none;
+  }
+  .card:hover,
+  .card:active {
+    transform: none;
+  }
+  .card:hover .image {
+    transform: none;
+  }
+}
+
+/* ---------- Artwork (image or placeholder + readability overlay + text) ---------- */
+.artwork {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 400ms ease;
+}
+
+.placeholderLetter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -58%);
+  font-size: clamp(3.5rem, 22cqw, 6rem);
+  font-weight: 800;
+  line-height: 1;
+  color: rgba(255, 255, 255, 0.16);
+  user-select: none;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(2, 6, 23, 0.86) 0%, rgba(2, 6, 23, 0.5) 42%, rgba(2, 6, 23, 0.06) 100%);
+}
+
+.text {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 12px 14px 12px;
+  /* The link sits underneath; text must never swallow clicks. */
+  pointer-events: none;
+  color: #fff;
+}
+
+@media (min-width: 48em) {
+  .text {
+    padding: 16px 18px 16px;
+  }
+}
+
+.name {
+  margin: 0;
+  font-size: clamp(1rem, 0.92rem + 0.45vw, 1.3rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.host {
+  margin: 3px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: rgba(255, 255, 255, 0.86);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hostMissing {
+  font-style: italic;
+}
+
+/* ---------- Interactive layers ---------- */
+/* One stretched link/button covers the whole card; the menu button sits above it as a sibling. */
+.link {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--card-radius);
+  outline: none;
+}
+
+.badge,
+.menuButton {
+  position: absolute;
+  top: 8px;
+  z-index: 2;
+}
+
+.badge {
+  left: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(6px);
+  pointer-events: none;
+}
+
+.menuButton {
+  right: 8px;
+  width: 44px; /* comfortable touch target */
+  height: 44px;
+  border-radius: 999px;
+  color: #fff;
+  background: rgba(2, 6, 23, 0.55);
+  backdrop-filter: blur(6px);
+  transition: background-color 120ms ease;
+}
+
+.menuButton:hover,
+.menuButton[data-expanded] {
+  background: rgba(2, 6, 23, 0.8);
+}
+
+.menuButton:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .menuButton {
+    width: 36px;
+    height: 36px;
+  }
+}
+
+/* ---------- "Add website" tile ---------- */
+.addTile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  min-height: 96px;
+  padding: 12px;
+  border: 2px dashed var(--mantine-color-default-border);
+  border-radius: 18px;
+  background: transparent;
+  color: var(--mantine-color-dimmed);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    color 140ms ease,
+    background-color 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 48em) {
+  .addTile {
+    aspect-ratio: 3 / 2;
+  }
+}
+
+.addTile:hover {
+  border-color: var(--mantine-primary-color-filled);
+  color: var(--mantine-primary-color-filled);
+  background: var(--mantine-primary-color-light);
+}
+
+.addTile:active {
+  background: var(--mantine-primary-color-light);
+}
+
+.addTile:focus-visible {
+  outline: 3px solid var(--mantine-primary-color-filled);
+  outline-offset: 3px;
+}
+
+.addIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--mantine-color-default-hover);
+}
+
+/* ---------- Form preview ---------- */
+.preview {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border-radius: 14px;
+  overflow: hidden;
+  isolation: isolate;
+  background: #1f2937;
+  container-type: inline-size;
+}
+
+.skeleton {
+  aspect-ratio: 4 / 3;
+  border-radius: 18px;
+}
+
+@media (min-width: 48em) {
+  .skeleton {
+    aspect-ratio: 3 / 2;
+  }
+}

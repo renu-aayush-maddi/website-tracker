@@ -64,6 +64,7 @@ describe('websiteToForm', () => {
           },
         ],
         healthStatus: 'UP',
+        coverVersion: null,
         createdAt: '',
         updatedAt: '',
       },

@@ -60,12 +60,13 @@ export function toQueryString(params: QueryParams = {}): string {
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   let res: Response;
+  const isBlob = body instanceof Blob;
   try {
     res = await fetch(`${BASE_URL}/api${path}`, {
       method,
       credentials: 'include',
-      headers: body === undefined ? undefined : { 'content-type': 'application/json' },
-      body: body === undefined ? undefined : JSON.stringify(body),
+      headers: body === undefined ? undefined : { 'content-type': isBlob ? body.type : 'application/json' },
+      body: body === undefined ? undefined : isBlob ? body : JSON.stringify(body),
     });
   } catch {
     throw new ApiError(0, 'NETWORK_ERROR', 'Cannot reach the server. It may be starting up — try again in a moment.');
@@ -78,6 +79,11 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     throw new ApiError(res.status, error?.code ?? 'HTTP_ERROR', error?.message ?? `Request failed (${res.status})`, error?.fields);
   }
   return (json as { data: T }).data;
+}
+
+/** Same-origin URL of a website's card image; `version` busts the browser cache when the image changes. */
+export function coverUrl(websiteId: string, version: string): string {
+  return `${BASE_URL}/api/websites/${websiteId}/cover?v=${encodeURIComponent(version)}`;
 }
 
 const get = <T>(path: string, params?: QueryParams) => request<T>('GET', `${path}${toQueryString(params)}`);
@@ -102,6 +108,8 @@ export const api = {
     create: (input: WebsiteInput) => request<WebsiteDto>('POST', '/websites', input),
     update: (id: string, input: WebsiteInput) => request<WebsiteDto>('PUT', `/websites/${id}`, input),
     remove: (id: string) => request<void>('DELETE', `/websites/${id}`),
+    setCover: (id: string, image: Blob) => request<{ coverVersion: string }>('PUT', `/websites/${id}/cover`, image),
+    removeCover: (id: string) => request<void>('DELETE', `/websites/${id}/cover`),
   },
   monitors: {
     setEnabled: (id: string, enabled: boolean) => request<MonitorDto>('PATCH', `/monitors/${id}`, { enabled }),

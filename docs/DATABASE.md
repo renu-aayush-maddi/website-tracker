@@ -11,6 +11,7 @@ All timestamps are stored as UTC `Date`s. Converting to the user's time zone hap
 | `users` | Account, Argon2id hash, **settings embedded** | Settings are 1:1 with the user and always read together, so they are embedded rather than kept in a separate `settings` collection. |
 | `sessions` | Server-side sessions | Allows instant revocation (logout, password change, "sign out everywhere"). Expired sessions are removed by a TTL index. |
 | `websites` | Projects with **environments embedded** | An environment has no meaning outside its project and is always shown with it. Embedding avoids duplicating project details for every environment. |
+| `websiteCovers` | One card background image per website (bytes) | Image data is kept out of `websites` so listing websites never loads it. |
 | `monitors` | One document per environment × type (`HEALTH_CHECK`, `WAKE_UP`) | The scheduler must atomically claim individual monitors (`findOneAndUpdate` on `nextRunAt`/`lockedUntil`), which cannot be done cleanly for array elements inside `websites`. Future check types (SSL expiry, keyword, …) become new `type` values. |
 | `monitoringLogs` | One document per request | Grows quickly, so it needs its own indexes and TTL retention. |
 | `notifications` | Email outbox and history | Delivery is retried by the scheduler; the outbox decouples sending from checking. |
@@ -46,6 +47,7 @@ Indexes: `tokenHash` (unique), `userId`, `expiresAt` (TTL, `expireAfterSeconds: 
   tags: string[],
   repository: { provider?, customProvider?, url?, defaultBranch? },
   notes?,
+  coverUpdatedAt?,   // set when a card image exists; also its cache-busting version
   environments: [{
     _id, type: 'PRODUCTION'|'STAGING'|'TESTING'|'DEVELOPMENT'|'OTHER', label?,
     websiteUrl?, backendUrl?, branch?,
@@ -60,6 +62,12 @@ Indexes: `tokenHash` (unique), `userId`, `expiresAt` (TTL, `expireAfterSeconds: 
 Indexes: `{userId, name}`, `{userId, tags}`, `{userId, updatedAt:-1}`.
 
 **No secrets are stored.** Only metadata (provider, account email, names, URLs) is accepted, and free-text fields are screened for secret-like content.
+
+## `websiteCovers`
+```ts
+{ _id, userId, websiteId /* unique */, contentType: 'image/jpeg'|'image/png'|'image/webp', data: Buffer, updatedAt }
+```
+Index: `websiteId` (unique). The browser resizes pictures to at most 1280 px and about 100–400 KB before upload and the server caps them at 600 KB, so 100 websites with images use roughly 10–40 MB. Deleting a website deletes its image. Writes to this collection also set or clear `websites.coverUpdatedAt` without touching `websites.updatedAt`.
 
 ## `monitors`
 ```ts

@@ -85,7 +85,7 @@ Query parameters (all optional):
 | `sort` | `name` (default) · `-name` · `status` · `responseTime` · `updatedAt` · `-updatedAt` |
 | `page`, `pageSize` | Default 1 / 25, max page size 100. |
 
-Response: `{ items: WebsiteSummary[], total, page, pageSize }`. Each summary contains the primary environment (Production, else the first), its providers, the worst health status, the last response time, whether monitoring/wake-up are enabled, and the primary monitor ids (used by the list's toggles).
+Response: `{ items: WebsiteSummary[], total, page, pageSize }`. Each summary contains `coverVersion` (see *Card image*), the primary environment (Production, else the first), its providers, the worst health status, the last response time, whether monitoring/wake-up are enabled, and the primary monitor ids (used by the list's toggles).
 
 ### `GET /websites/tags`
 Distinct tags, sorted.
@@ -183,7 +183,29 @@ The full website. Every environment includes `healthCheck` and `wakeUp` monitor 
 The website's `healthStatus` is the worst health-check status across its environments.
 
 ### `DELETE /websites/:id` → `204`
-Deletes the website, its monitors, all logs and its notifications.
+Deletes the website, its monitors, all logs, its notifications and its card image.
+
+### Card image
+
+Each website can have one background image for its card on the Home page. Images are stored separately from the website, so website responses only carry `coverVersion` (an ISO timestamp, or `null` when there is no image). Use it to cache-bust the image URL.
+
+#### `PUT /websites/:id/cover`
+The request body is the **raw image bytes** (not JSON), with `Content-Type: image/jpeg`, `image/png` or `image/webp`. Returns `200 { coverVersion }`.
+
+| Status | When |
+|---|---|
+| `400` | The bytes are not really a JPEG/PNG/WebP, whatever the `Content-Type` says. |
+| `413` | Larger than 600 KB. The web app resizes pictures to about 1280 px wide JPEG first, so this should not happen in normal use. |
+| `415` | Any other content type (including SVG) or an empty body. |
+| `404` | Unknown website, or one that belongs to someone else. |
+
+Saving an image does not change the website's own `updatedAt`, and editing the website later does not remove the image.
+
+#### `GET /websites/:id/cover`
+Returns the image. Sent with `Cache-Control: private, max-age=31536000, immutable` and `X-Content-Type-Options: nosniff`; request it as `/api/websites/:id/cover?v=<coverVersion>` so a new image is always a new URL. `404` if there is no image.
+
+#### `DELETE /websites/:id/cover` → `204`
+Removes the image. Safe to repeat.
 
 ---
 

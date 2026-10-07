@@ -155,6 +155,7 @@ export interface WebsiteDto {
   environments: EnvironmentDto[];
   /** Worst health status across environments with monitoring enabled. */
   healthStatus: HealthStatus;
+  coverVersion: string | null;
   createdAt: IsoDate;
   updatedAt: IsoDate;
 }
@@ -182,6 +183,8 @@ export interface WebsiteSummaryDto {
   /** Health monitor of the primary environment, for quick toggles. */
   primaryHealthMonitorId: string | null;
   primaryWakeUpMonitorId: string | null;
+  /** Changes whenever the card image does; null when there is no image. Used to cache-bust the image URL. */
+  coverVersion: string | null;
   updatedAt: IsoDate;
 }
 

@@ -48,8 +48,9 @@ It is built to run on **Render's free tier with MongoDB Atlas M0**, and is desig
 - **SSRF protection:** requests to localhost, private networks, link-local and cloud metadata endpoints are blocked, including after DNS resolution and on every redirect.
 
 **Views**
+- **Home (default page after sign-in):** a launchpad of your websites as image cards. Tap a card to open the site in a new tab. Each card has a name, background image (or a colour placeholder when there is none) and a small health indicator when monitoring is on. Add and edit with a quick dialog (name, URL, image; phone photos are resized in the browser), and use the "⋯" menu for Edit, Details & monitoring, and Delete. It is a responsive grid: 1 column at 320 px, 2 on phones, more on tablets and desktops.
 - **Dashboard:** totals, healthy/degraded/down counts, monitoring and wake-up counts, 24-hour uptime and average response time, a per-website health table, and recent activity. It refreshes every 30 seconds and warns when the scheduler has stalled or a wake-up is using up Render's free hours.
-- **Websites:** search across names, URLs, providers and accounts; filter by health, environment, project status, tags, monitoring and wake-up; sort; paginate; toggle monitoring and wake-up inline.
+- **Inventory** (the full website table at `/websites`): search across names, URLs, providers and accounts; filter by health, environment, project status, tags, monitoring and wake-up; sort; paginate; toggle monitoring and wake-up inline.
 - **Website details:** overview, repository, hosting, database, both monitors (last and next run, 7-day average response and uptime), a 24-hour response-time chart and recent logs.
 - **Monitoring:** availability and response-time history by website, check type, result and date range. Shows total/successful/failed counts, uptime, and average/minimum/maximum/p95 response time, with charts and a table view.
 - **Logs:** every request, filterable and paginated (keyset pagination, so deep pages stay fast).
@@ -95,6 +96,7 @@ Validation and status rules live in `shared` and are used by both the API and th
 | One project with embedded environments | Avoids repeating project details for each environment, while every environment still gets its own hosting, database and monitors. |
 | Monitors in their own collection | The scheduler claims monitors atomically one at a time, and new check types can be added later. See [docs/DATABASE.md](docs/DATABASE.md). |
 | Mantine UI | One library covers components, dark mode, forms, toasts, dialogs and charts. |
+| Card images live in their own collection and are served from the API's own origin | List responses stay small (they carry only a version string), the images work with the static site's strict CSP (`img-src 'self'`), and the URL changes whenever the image does, so browsers can cache it forever. See [docs/DATABASE.md](docs/DATABASE.md). |
 
 ---
 
@@ -408,6 +410,7 @@ Messages are written to the `notifications` outbox and delivered by the schedule
 - **CORS:** allow-list from `FRONTEND_URL`, credentials only for those origins.
 - **Validation:** every body and query string is parsed with strict Zod schemas (unknown fields are stripped and types enforced), so `{ "$ne": … }`-style **operator injection** cannot reach MongoDB. Mongoose `strictQuery` drops unknown filter paths, and search uses no user-built regex. (`express-mongo-sanitize` is not used; it is unmaintained and incompatible with Express 5.)
 - 100 KB body limit, Helmet security headers on the API, and a strict CSP plus `X-Frame-Options`, `nosniff`, `Referrer-Policy`, `Permissions-Policy` and HSTS on the static site.
+- **Image uploads:** the browser re-encodes every picture to a small JPEG (this also strips camera metadata such as GPS). The server still never trusts that: it accepts only JPEG/PNG/WebP, **verifies the real format from the file's first bytes** (not the declared type), rejects SVG and anything else, caps the size at 600 KB with a limit applied only to that route, scopes images to their owner (404 for anyone else), and serves them with `X-Content-Type-Options: nosniff`.
 - **XSS:** React escapes all output and `dangerouslySetInnerHTML` is never used. Stored URLs are rendered as links only if they are `http(s)`, so `javascript:` links are impossible. Emails are plain text.
 - Errors: clients get generic messages for 500s, and details go only to the server log. The logger redacts cookies, authorization headers, passwords and token hashes. Configuration errors never print values.
 

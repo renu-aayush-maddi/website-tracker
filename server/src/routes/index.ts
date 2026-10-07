@@ -1,5 +1,6 @@
-import { Router } from 'express';
+import express, { Router } from 'express';
 import * as authController from '../controllers/authController.js';
+import * as coverController from '../controllers/coverController.js';
 import { insightsController } from '../controllers/insightsController.js';
 import { monitorController } from '../controllers/monitorController.js';
 import { requireSchedulerSecret, schedulerController } from '../controllers/schedulerController.js';
@@ -7,7 +8,7 @@ import { websiteController } from '../controllers/websiteController.js';
 import type { AppDeps } from '../deps.js';
 import { requireAuth } from '../middleware/auth.js';
 import { authLimiter, emailTestLimiter, manualRunLimiter, schedulerLimiter } from '../middleware/rateLimits.js';
-import { PROVIDER_CATALOG } from '@wt/shared';
+import { COVER_IMAGE, PROVIDER_CATALOG } from '@wt/shared';
 
 export function internalRoutes(deps: AppDeps): Router {
   const router = Router();
@@ -47,6 +48,16 @@ export function protectedRoutes(deps: AppDeps): Router {
   router.get('/websites/:id', websites.get);
   router.put('/websites/:id', websites.update);
   router.delete('/websites/:id', websites.remove);
+
+  // Binary body, parsed only on this route so the global 100 KB JSON limit is untouched.
+  // Larger bodies are rejected as 413 by the parser; the type is verified from the bytes afterwards.
+  router.put(
+    '/websites/:id/cover',
+    express.raw({ type: [...COVER_IMAGE.contentTypes], limit: COVER_IMAGE.maxBytes }),
+    coverController.put,
+  );
+  router.get('/websites/:id/cover', coverController.get);
+  router.delete('/websites/:id/cover', coverController.remove);
 
   router.get('/monitors/:id', monitors.get);
   router.patch('/monitors/:id', monitors.patch);

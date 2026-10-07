@@ -20,6 +20,7 @@ import {
   MonitoringLog,
   Notification,
   Website,
+  WebsiteCover,
   type EnvironmentSub,
   type MonitorDoc,
   type WebsiteDoc,
@@ -112,6 +113,7 @@ function toWebsiteDto(website: WebsiteDoc, monitors: MonitorIndex): WebsiteDto {
     notes: website.notes,
     environments,
     healthStatus: worstStatus(environments.map((e) => e.healthCheck.state.status)),
+    coverVersion: website.coverUpdatedAt?.toISOString() ?? null,
     createdAt: website.createdAt.toISOString(),
     updatedAt: website.updatedAt.toISOString(),
   };
@@ -169,6 +171,7 @@ export function summarize(website: WebsiteDoc, monitors: MonitorIndex): WebsiteS
     lastCheckedAt: reference?.state.lastRunAt?.toISOString() ?? null,
     primaryHealthMonitorId: primaryHealth?._id.toString() ?? null,
     primaryWakeUpMonitorId: primaryWake?._id.toString() ?? null,
+    coverVersion: website.coverUpdatedAt?.toISOString() ?? null,
     updatedAt: website.updatedAt.toISOString(),
   };
 }
@@ -403,4 +406,5 @@ export async function deleteWebsite(userId: Types.ObjectId, websiteId: Types.Obj
   // Potentially large; kept out of the transaction to stay within its size/time limits.
   await MonitoringLog.deleteMany({ websiteId });
   await Notification.deleteMany({ websiteId });
+  await WebsiteCover.deleteOne({ websiteId });
 }

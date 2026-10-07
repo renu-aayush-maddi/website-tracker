@@ -57,6 +57,8 @@ export interface WebsiteDoc {
   };
   notes?: string;
   environments: EnvironmentSub[];
+  /** Set when a card image exists in websiteCovers; doubles as its cache-busting version. */
+  coverUpdatedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -113,6 +115,7 @@ const websiteSchema = new Schema<WebsiteDoc>(
     },
     notes: String,
     environments: { type: [environmentSchema], default: [] },
+    coverUpdatedAt: Date,
   },
   { timestamps: true },
 );

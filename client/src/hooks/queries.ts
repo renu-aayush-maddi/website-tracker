@@ -1,6 +1,7 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SettingsInput, WebsiteInput } from '@wt/shared';
 import { api, type QueryParams } from '../services/api';
+import { quickSaveWebsite, type QuickSaveRequest } from '../services/launchpadService';
 
 export const keys = {
   dashboard: ['dashboard'] as const,
@@ -63,6 +64,15 @@ export function useSaveWebsite(id?: string) {
   return useMutation({
     mutationFn: (input: WebsiteInput) => (id ? api.websites.update(id, input) : api.websites.create(input)),
     onSuccess: () => invalidate(),
+  });
+}
+
+export function useQuickSaveWebsite() {
+  const invalidate = useInvalidateMonitoring();
+  return useMutation({
+    mutationFn: (request: QuickSaveRequest) => quickSaveWebsite(request),
+    // Refresh even when only the image step failed: the website itself was saved.
+    onSettled: () => invalidate(),
   });
 }
 

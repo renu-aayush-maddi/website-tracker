@@ -6,6 +6,7 @@ import { LoginPage } from './pages/LoginPage';
 import { SetupPage } from './pages/SetupPage';
 
 // Route-level code splitting keeps the initial load small; charts load with the pages that use them.
+const HomePage = lazy(() => import('./pages/HomePage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const WebsitesPage = lazy(() => import('./pages/WebsitesPage'));
 const WebsiteFormPage = lazy(() => import('./pages/WebsiteFormPage'));
@@ -27,7 +28,8 @@ export function App() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<DashboardPage />} />
+        <Route index element={<HomePage />} />
+        <Route path="dashboard" element={<DashboardPage />} />
         <Route path="websites" element={<WebsitesPage />} />
         <Route path="websites/new" element={<WebsiteFormPage />} />
         <Route path="websites/:id" element={<WebsiteDetailPage />} />

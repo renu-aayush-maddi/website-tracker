@@ -3,12 +3,13 @@ import { useDisclosure } from '@mantine/hooks';
 import {
   IconActivity,
   IconFileText,
+  IconHome2,
   IconLayoutDashboard,
   IconLogout,
   IconMoon,
   IconSettings,
   IconSun,
-  IconWorld,
+  IconTable,
 } from '@tabler/icons-react';
 import { Suspense } from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router';
@@ -16,8 +17,9 @@ import { LoadingState } from '../components/States';
 import { useAuth } from '../context/AuthContext';
 
 const NAV = [
-  { to: '/', label: 'Dashboard', icon: IconLayoutDashboard, exact: true },
-  { to: '/websites', label: 'Websites', icon: IconWorld },
+  { to: '/', label: 'Home', icon: IconHome2, exact: true },
+  { to: '/dashboard', label: 'Dashboard', icon: IconLayoutDashboard },
+  { to: '/websites', label: 'Inventory', icon: IconTable },
   { to: '/monitoring', label: 'Monitoring', icon: IconActivity },
   { to: '/logs', label: 'Logs', icon: IconFileText },
   { to: '/settings', label: 'Settings', icon: IconSettings },
@@ -27,7 +29,7 @@ export function Logo() {
   return (
     <Group gap={8} wrap="nowrap">
       <img src="/favicon.svg" width={26} height={26} alt="" />
-      <Text fw={700} fz="lg">
+      <Text fw={700} fz={{ base: 'md', xs: 'lg' }} style={{ whiteSpace: 'nowrap' }}>
         Website Tracker
       </Text>
     </Group>

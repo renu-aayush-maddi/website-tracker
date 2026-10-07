@@ -5,3 +5,4 @@ export * from './Monitor.js';
 export * from './MonitoringLog.js';
 export * from './Notification.js';
 export * from './SystemState.js';
+export * from './WebsiteCover.js';
